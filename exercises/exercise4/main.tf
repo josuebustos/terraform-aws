@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-west-2"
+  region = "us-west-2"  
 }
 
 #====================================
@@ -24,11 +24,14 @@ module "network" {
 
 module "security" {
   source = "./modules/security"
-
-  vpc_id         = module.network.vpc_id
+  # references to the child modules are made starting with the network module
+  # 
+  vpc_id         = module.network.vpc_id # which is configured as an output on the networking module. See outputs.tf
   workstation_ip = var.workstation_ip
 
   depends_on = [
+    # security module has a dependency configured on the networking module since it needs and references the VPC ID
+    # depends on this: vpc_id         = module.network.vpc_id
     module.network
   ]
 }
@@ -85,4 +88,13 @@ module "application" {
     module.storage
   ]
 }
+
+
+resource "aws_key_pair" "my_key_pair" {
+  key_name   = var.key_name
+  public_key = file("/Users/josuebustos/.ssh/id_rsa.pub")
+  # public_key = file("${abspath(path.cwd)}/my-key.pub")
+}
+
+# 98.159.85.30/32
 

@@ -28,7 +28,7 @@ systemctl start mongod
 
 echo preparing mongodb data population script...
 mkdir -p /tmp/cloudacademy-app
-cd /tmp/cloudacademy-app
+cd /tmp/cloudacademy-app || exit
 
 cat > db.setup.js << EOF
 use langdb;
