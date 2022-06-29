@@ -1,0 +1,53 @@
+{
+    "ResourceRecordSets": [
+        {
+            "Name": "nuronet.io.",
+            "Type": "A",
+            "TTL": 60,
+            "ResourceRecords": [
+                {
+                    "Value": "3.237.171.225"
+                }
+            ]
+        },
+        {
+            "Name": "nuronet.io.",
+            "Type": "NS",
+            "TTL": 172800,
+            "ResourceRecords": [
+                {
+                    "Value": "ns-635.awsdns-15.net."
+                },
+                {
+                    "Value": "ns-1991.awsdns-56.co.uk."
+                },
+                {
+                    "Value": "ns-260.awsdns-32.com."
+                },
+                {
+                    "Value": "ns-1141.awsdns-14.org."
+                }
+            ]
+        },
+        {
+            "Name": "nuronet.io.",
+            "Type": "SOA",
+            "TTL": 900,
+            "ResourceRecords": [
+                {
+                    "Value": "ns-635.awsdns-15.net. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"
+                }
+            ]
+        },
+        {
+            "Name": "graylog.nuronet.io.",
+            "Type": "A",
+            "TTL": 300,
+            "ResourceRecords": [
+                {
+                    "Value": "18.205.23.148"
+                }
+            ]
+        }
+    ]
+}
