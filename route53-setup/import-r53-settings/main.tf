@@ -31,21 +31,29 @@ resource "aws_route53_record" "www" {
   ]
 }
 
+
 locals {
-  instances = {
+  host_names = {
     namea = "dev1.nuronet.io"
     nameb = "qa1.nuronet.io"
     namec = "api1.nuronet.io"
+  } 
+  ip_number = {
+    ipa = "10.0.0.1"
+    ipb = "10.0.0.2"
+    ipc = "10.0.0.3"
   }
+  host_deploy_names = zipmap(values(local.host_names),values(local.ip_number))
 }
 
+
 resource "aws_route53_record" "subdomains" {
-  for_each        = local.instances
+  for_each        = local.host_deploy_names
   allow_overwrite = true
   zone_id         = aws_route53_zone.www.zone_id
   # zone_id         = data.aws_route53_zone.selected.zone_id
-  name            = each.value
-  type            = "A"
-  ttl             = "300"
-  records = ["10.10.10.10"]
+  name    = each.key
+  type    = "A"
+  ttl     = "300"
+  records = ["${each.value}"]
 }
