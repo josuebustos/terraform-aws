@@ -46,7 +46,6 @@ locals {
   host_deploy_names = zipmap(values(local.host_names),values(local.ip_number))
 }
 
-
 resource "aws_route53_record" "subdomains" {
   for_each        = local.host_deploy_names
   allow_overwrite = true
