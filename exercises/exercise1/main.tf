@@ -108,12 +108,24 @@ resource "aws_instance" "web" {
   associate_public_ip_address = true
 
   #userdata
+  
   user_data = <<EOF
 #!/bin/bash
-apt-get -y update
-apt-get -y install nginx
-service nginx start
-echo fin v1.00!
+sudo yum update -y
+# Install Nginx
+sudo amazon-linux-extras install nginx1 -y 
+sudo systemctl start nginx
+sudo systemctl enable nginx
+# Install Certbot Letsencrypt
+sudo amazon-linux-extras install epel -y
+sudo yum install certbot-nginx -y
+# Install Docker
+sudo amazon-linux-extras install docker -y
+sudo systemctl start docker
+sudo systemctl enable docker
+# Install Docker Compose
+sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 EOF
 
   tags = {
@@ -121,11 +133,10 @@ EOF
   }
 }
 
-resource "aws_route53_record" "www" {
-  zone_id = aws_route53_zone.primary.zone_id
-  name    = "razortooth.nuronet.com"
-  type    = "A"
-  ttl     = "300"
-  records = [aws_instance.web.public_ip]
-  # records = [aws_eip.lb.public_ip]
+resource "aws_key_pair" "my_key_pair" {
+  key_name   = var.key_name
+  public_key = file("/Users/josuebustos/.ssh/terraform_ca.pub")
+  # public_key = file("${abspath(path.cwd)}/my-key.pub")
 }
+
+# 98.159.85.30/32

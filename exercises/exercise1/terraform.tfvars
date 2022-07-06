@@ -1,4 +1,4 @@
-region             = "us-east-1"
-availability_zones = ["us-east-1a", "us-east-1b"]
+region             = "us-west-2"
+availability_zones = ["us-west-2a", "us-west-2b"]
 instance_type      = "t2.micro"
-key_name           = "cloudacademydemo"
+key_name           = "terraform_ca"
