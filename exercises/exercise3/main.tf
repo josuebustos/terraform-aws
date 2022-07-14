@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-west-2"
+  region = "us-east-1"
 }
 
 data "aws_ami" "ubuntu" {
@@ -194,6 +194,15 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description      = "TLS from VPC"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
   egress {
     from_port       = 0
     to_port         = 0
@@ -206,7 +215,7 @@ resource "aws_security_group" "alb" {
   }
 }
 
-resource "aws_launch_template" "webtemplate" {
+resource "aws_launch_template" "web_template" {
   name = "web"
 
   image_id               = data.aws_ami.ubuntu.id
@@ -247,16 +256,44 @@ resource "aws_lb" "alb1" {
   }
 }
 
+data "aws_acm_certificate" "issued" {
+  domain      = "awsdevcamp.com"
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
+
 resource "aws_alb_target_group" "webserver" {
   vpc_id   = aws_vpc.main.id
   port     = 80
   protocol = "HTTP"
 }
 
+data "aws_acm_certificate" "amazon_issued" {
+  domain   = "awsdevcamp.com"
+  statuses = ["ISSUED"]
+}
 resource "aws_alb_listener" "front_end" {
   load_balancer_arn = aws_lb.alb1.arn
   port              = "80"
   protocol          = "HTTP"
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+}
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.alb1.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = data.aws_acm_certificate.amazon_issued.arn
 
   default_action {
     type             = "forward"
@@ -272,7 +309,6 @@ resource "aws_alb_listener_rule" "rule1" {
     type             = "forward"
     target_group_arn = aws_alb_target_group.webserver.arn
   }
-
   condition {
     path_pattern {
       values = ["/"]
@@ -290,7 +326,14 @@ resource "aws_autoscaling_group" "asg" {
   target_group_arns = [aws_alb_target_group.webserver.arn]
 
   launch_template {
-    id      = aws_launch_template.webtemplate.id
+    id      = aws_launch_template.web_template.id
     version = "$Latest"
   }
 }
+resource "aws_key_pair" "my_key_pair" {
+  key_name   = var.key_name
+  public_key = file("/Users/josuebustos/.ssh/terraform_ca2.pub")
+  # public_key = file("${abspath(path.cwd)}/my-key.pub")
+}
+
+# 98.159.85.30/32
