@@ -8,7 +8,8 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  profile = "default"
+  region  = "us-east-1"
 }
 
 data "aws_ami" "ubuntu" {
@@ -169,6 +170,17 @@ resource "aws_security_group" "webserver" {
     ]
   }
 
+  ingress {
+    description = "TLS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [
+      #10.0.0.0/23 covers both pubic subnets
+      cidrsubnet(var.cidr_block, 7, 0)
+    ]
+  }
+
   egress {
     from_port        = 0
     to_port          = 0
@@ -179,33 +191,6 @@ resource "aws_security_group" "webserver" {
 
   tags = {
     Name = "allow traffic"
-  }
-}
-
-resource "aws_security_group" "allow_tls" {
-  name        = "allow_tls"
-  description = "Allow TLS inbound traffic"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description      = "TLS from VPC"
-    from_port        = 443
-    to_port          = 443
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-
-  tags = {
-    Name = "allow_tls"
   }
 }
 
@@ -223,14 +208,12 @@ resource "aws_security_group" "alb" {
   }
 
   ingress {
-    description      = "TLS from VPC"
-    from_port        = 443
-    to_port          = 443
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    description = "443 from anywhere"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
-
   egress {
     from_port       = 0
     to_port         = 0
@@ -284,22 +267,12 @@ resource "aws_lb" "alb1" {
   }
 }
 
-data "aws_acm_certificate" "issued" {
-  domain      = "awsdevcamp.com"
-  statuses    = ["ISSUED"]
-  most_recent = true
-}
-
 resource "aws_alb_target_group" "webserver" {
   vpc_id   = aws_vpc.main.id
   port     = 80
   protocol = "HTTP"
 }
 
-data "aws_acm_certificate" "amazon_issued" {
-  domain   = "awsdevcamp.com"
-  statuses = ["ISSUED"]
-}
 resource "aws_alb_listener" "front_end" {
   load_balancer_arn = aws_lb.alb1.arn
   port              = "80"
@@ -313,11 +286,31 @@ resource "aws_alb_listener" "front_end" {
       status_code = "HTTP_301"
     }
   }
+}
 
+# resource "aws_alb_listener_rule" "rule1" {
+#   listener_arn = aws_alb_listener.front_end.arn
+#   priority     = 99
+#   action {
+#     type             = "forward"
+#     target_group_arn = aws_alb_target_group.webserver.arn
+#   }
+#   condition {
+#     path_pattern {
+#       values = ["/"]
+#     }
+#   }
+  
+# }
+
+data "aws_acm_certificate" "amazon_issued" {
+  domain   = "awsdevcamp.com"
+  statuses = ["ISSUED"]
 }
 
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.alb1.arn
+  
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
@@ -326,21 +319,6 @@ resource "aws_lb_listener" "https" {
   default_action {
     type             = "forward"
     target_group_arn = aws_alb_target_group.webserver.arn
-  }
-}
-
-resource "aws_alb_listener_rule" "rule1" {
-  listener_arn = aws_alb_listener.front_end.arn
-  priority     = 99
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_alb_target_group.webserver.arn
-  }
-  condition {
-    path_pattern {
-      values = ["/"]
-    }
   }
 }
 
