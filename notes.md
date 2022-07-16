@@ -34,4 +34,5 @@ sudo sed -i '26 s/127.0.0.1/0.0.0.0/' /etc/arangod.conf
 
 sudo sed -i '54 i ' nginx.conf
 
-sudo sed -i '53 a  \n        location / {\n            allow all;\n            proxy_pass http://localhost:8529;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade $http_upgrade;\n            proxy_set_header Connection 'upgrade';\n            proxy_set_header Host $host;\n            proxy_cache_bypass $http_upgrade;\n        }' nginx.conf
+sudo sed -i '53 a  \
+        location / {\n            allow all;\n            proxy_pass http://localhost:8529;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade $http_upgrade;\n            proxy_set_header Connection 'upgrade';\n            proxy_set_header Host $host;\n            proxy_cache_bypass $http_upgrade;\n        }' nginx.conf
