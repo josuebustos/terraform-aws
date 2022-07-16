@@ -288,21 +288,6 @@ resource "aws_alb_listener" "front_end" {
   }
 }
 
-# resource "aws_alb_listener_rule" "rule1" {
-#   listener_arn = aws_alb_listener.front_end.arn
-#   priority     = 99
-#   action {
-#     type             = "forward"
-#     target_group_arn = aws_alb_target_group.webserver.arn
-#   }
-#   condition {
-#     path_pattern {
-#       values = ["/"]
-#     }
-#   }
-  
-# }
-
 data "aws_acm_certificate" "amazon_issued" {
   domain   = "awsdevcamp.com"
   statuses = ["ISSUED"]
@@ -310,16 +295,31 @@ data "aws_acm_certificate" "amazon_issued" {
 
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.alb1.arn
-  
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = data.aws_acm_certificate.amazon_issued.arn
+
+  port            = "443"
+  protocol        = "HTTPS"
+  ssl_policy      = "ELBSecurityPolicy-2016-08"
+  certificate_arn = data.aws_acm_certificate.amazon_issued.arn
 
   default_action {
     type             = "forward"
     target_group_arn = aws_alb_target_group.webserver.arn
   }
+}
+
+resource "aws_lb_listener_rule" "host_based_weighted_routing" {
+  listener_arn = aws_alb_listener.front_end.arn
+  priority     = 99
+  action {
+    type             = "forward"
+    target_group_arn = aws_alb_target_group.webserver.arn
+  }
+  condition {
+    path_pattern {
+      values = ["*.awsdevcamp.com"]
+    }
+  }
+
 }
 
 resource "aws_autoscaling_group" "asg" {

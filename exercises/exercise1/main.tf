@@ -116,9 +116,6 @@ sudo yum update -y
 sudo amazon-linux-extras install nginx1 -y 
 sudo systemctl start nginx
 sudo systemctl enable nginx
-# Install Certbot Letsencrypt
-sudo amazon-linux-extras install epel -y
-sudo yum install certbot-nginx -y
 # Install Docker
 sudo amazon-linux-extras install docker -y
 sudo systemctl start docker
