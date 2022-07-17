@@ -12,12 +12,13 @@ provider "aws" {
   region  = "us-east-1"
 }
 
-data "aws_ami" "ubuntu" {
+data "aws_ami" "amzn2" {
   most_recent = true
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["amzn2-ami-kernel-5.10-hvm-2.0.20220606.1-x86_64-gp2"]
+    # values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
 
   filter {
@@ -26,7 +27,8 @@ data "aws_ami" "ubuntu" {
   }
 
   # Canonical
-  owners = ["099720109477"]
+  owners = ["amazon"]
+  # owners = ["099720109477"]
 }
 
 resource "aws_vpc" "main" {
@@ -229,7 +231,7 @@ resource "aws_security_group" "alb" {
 resource "aws_launch_template" "web_template" {
   name = "web"
 
-  image_id               = data.aws_ami.ubuntu.id
+  image_id               = data.aws_ami.amzn2.id
   instance_type          = var.instance_type
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.webserver.id]
@@ -342,4 +344,19 @@ resource "aws_key_pair" "my_key_pair" {
   # public_key = file("${abspath(path.cwd)}/my-key.pub")
 }
 
-# 98.159.85.30/32
+data "aws_route53_zone" "selected" {
+  name         = "awsdevcamp.com"
+  private_zone = false
+}
+
+data "aws_elb_hosted_zone_id" "main" {}
+resource "aws_route53_record" "sub_domain" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = "db.${data.aws_route53_zone.selected.name}"
+  type    = "A"
+  alias {
+    name                   = aws_lb.alb1.dns_name
+    zone_id                = data.aws_elb_hosted_zone_id.main.id
+    evaluate_target_health = false
+  }
+}
