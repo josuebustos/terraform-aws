@@ -4,24 +4,13 @@
 # service nginx start
 # echo fin v1.00!
 
-sudo amazon-linux-extras install nginx1 -y 
-sudo systemctl start nginx
-sudo systemctl enable nginx
-# Install ArangoDB CentOS
-cd /etc/yum.repos.d/
-sudo curl -OL https://download.arangodb.com/arangodb39/RPM/arangodb.repo
-sudo yum install arangodb3-3.9.2-1.0 -y 
-# Modify ArangoDB Conf File
-sudo sed -i 's/endpoint = tcp:\/\/127.0.0.1:8529/endpoint = tcp:\/\/0.0.0.0:8529/g' /etc/arangodb3/arangod.conf
-# Modify Nginx Conf File
-sudo sed -i 's/root         \/usr\/share\/nginx\/html;/# root         \/usr\/share\/nginx\/html;/g' /etc/nginx/nginx.conf
-sudo sed -i '54 i  \
-    ' /etc/nginx/nginx.conf
+sudo yum update -y
+# Install Docker
+sudo amazon-linux-extras install docker -y
+sudo systemctl start docker
+sudo systemctl enable docker
+# Install Docker Compose
+sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
-sudo sed -i '54 a  \
-        location / {\n            allow all;\n            proxy_pass http://localhost:8529;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade $http_upgrade;\n            proxy_set_header Connection 'upgrade';\n            proxy_set_header Host $host;\n            proxy_cache_bypass $http_upgrade;\n        }' /etc/nginx/nginx.conf
-
-sudo systemctl stop arangodb3
-ARANGODB_DEFAULT_ROOT_PASSWORD=dbadmin arango-secure-installation
-sudo systemctl restart arangodb3
-sudo systemctl restart nginx
+# allow EC2 to access ECR to download docker image
